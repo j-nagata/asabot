@@ -5,30 +5,40 @@ import random
 import qrcode
 import PIL
 
-def QRMonitoring():
 
-    cap = cv2.VideoCapture(0)
+class QRAuth:
+    def __init__(self, path='auth.png'):
+        self.auth = self.issueAuth()
+        self.path = path
+        self.issueQRCode(self.auth, self.path)
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
-    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('H', '2', '6', '4'))
+    def QRMonitoring(self):
+        cap = cv2.VideoCapture(0)
 
-    detector = cv2.QRCodeDetector()
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('H', '2', '6', '4'))
 
-    while (cap.isOpened()):
-        ret, frame = cap.read()
-        data, points, _ = detector.detectAndDecode(frame)
+        while (cap.isOpened()):
+            ret, frame = cap.read()
 
+            result = self.isSucceeded(frame)
+            if result is not None:
+                cap.release()
+                return result
+
+            time.sleep(0.1)
+
+    def isSucceeded(self, img):
+        detector = cv2.QRCodeDetector()
+        data, _, _ = detector.detectAndDecode(img)
         if data != '':
-            print('data: ', data)
-            return data
+            return data == self.auth
+        return None
 
-        time.sleep(0.07)
+    def issueQRCode(self, auth, path):
+        qrimg = qrcode.make(auth)
+        qrimg.save(path)
 
-def QRImage(auth, path):
-    qrimg = qrcode.make(auth)
-    qrimg.save(path)
-
-def IssueAuth():
-    auth = ''.join([random.choice(string.punctuation + string.ascii_letters + string.digits) for i in range(30)])
-    return auth
+    def issueAuth(self, length=30):
+        return ''.join([random.choice(string.punctuation + string.ascii_letters + string.digits) for i in range(length)])
